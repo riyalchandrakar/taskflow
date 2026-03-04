@@ -158,3 +158,26 @@ SPECTACULAR_SETTINGS = {
         'persistAuthorization': True,
     },
 }
+
+# ─── Rate Limiting (django-ratelimit) ─────────────────────────────────────────
+# Uses Django's cache backend as counter store.
+# In production swap to Redis: CACHES = { 'default': { 'BACKEND': 'django_redis...' } }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'taskflow-ratelimit',
+    }
+}
+
+RATELIMIT_USE_CACHE = 'default'   # which CACHES key to use
+RATELIMIT_FAIL_OPEN  = False       # if cache is unavailable, BLOCK the request (safe default)
+
+# Limits per endpoint group (read in app/utils/ratelimit.py)
+RATE_LIMITS = {
+    'login':    '5/m',    # 5 attempts  / minute  / IP   — brute-force protection
+    'register': '3/m',    # 3 signups   / minute  / IP
+    'refresh':  '10/m',   # 10 refreshes/ minute  / IP
+    'tasks_write': '30/m',# 30 mutations/ minute  / user — create, update, delete
+    'tasks_read':  '60/m',# 60 reads    / minute  / user
+    'analytics':   '20/m',# 20 hits     / minute  / user
+}
