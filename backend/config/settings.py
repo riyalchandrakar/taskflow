@@ -170,7 +170,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'app.core.pagination.StandardPagination',
     'PAGE_SIZE': 10,
-    'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
+   # 'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
 }
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
