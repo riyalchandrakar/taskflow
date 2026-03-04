@@ -9,3 +9,9 @@ python-decouple==3.8
 Pillow==10.4.0
 django-filter==24.2
 django-ratelimit==4.1.0
+# Production
+gunicorn==22.0.0
+whitenoise==6.7.0
+# Redis (Upstash free tier)
+redis==5.0.8
+django-redis==5.4.0

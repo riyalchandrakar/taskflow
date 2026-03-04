@@ -8,8 +8,8 @@ from decouple import config, Csv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-this-in-production-please')
-DEBUG = config('DEBUG', default=True, cast=bool)
+SECRET_KEY   = config('SECRET_KEY', default='django-insecure-change-this-in-production-please')
+DEBUG        = config('DEBUG', default=False, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
 
 INSTALLED_APPS = [
@@ -32,6 +32,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← serve static files in prod
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -61,8 +62,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database — Neon PostgreSQL via connection string
-# Format: postgresql://user:password@host/dbname?sslmode=require
+# ─── Database — Neon PostgreSQL connection string ─────────────────────────────
 import dj_database_url
 
 DATABASE_URL = config('DATABASE_URL', default='')
@@ -76,7 +76,6 @@ if DATABASE_URL:
         )
     }
 else:
-    # Fallback for local dev without connection string
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -98,14 +97,65 @@ AUTH_PASSWORD_VALIDATORS = [
 AUTH_USER_MODEL = 'app.User'
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'UTC'
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE     = 'UTC'
+USE_I18N      = True
+USE_TZ        = True
 
-STATIC_URL = 'static/'
+# ─── Static files (WhiteNoise) ────────────────────────────────────────────────
+STATIC_URL  = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ─── REST Framework ────────────────────────────────────────────────────────────
+# ─── Redis Cache — Upstash (free) or local ────────────────────────────────────
+# Upstash gives you a REDIS_URL like:
+#   rediss://default:<password>@<host>.upstash.io:6379
+# For local dev just set: REDIS_URL=redis://localhost:6379
+REDIS_URL = config('REDIS_URL', default='')
+
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django_redis.cache.RedisCache',
+            'LOCATION': REDIS_URL,
+            'OPTIONS': {
+                'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+                'SOCKET_CONNECT_TIMEOUT': 5,
+                'SOCKET_TIMEOUT': 5,
+                'CONNECTION_POOL_KWARGS': {
+                    'max_connections': 20,
+                    'ssl_cert_reqs': None,   # required for Upstash TLS
+                },
+                'IGNORE_EXCEPTIONS': True,   # degrade gracefully if Redis is down
+            },
+            'KEY_PREFIX': 'taskflow',
+            'TIMEOUT': 300,                  # default 5-min TTL
+        }
+    }
+else:
+    # Local dev fallback — in-memory cache (does NOT persist across restarts)
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+            'LOCATION': 'taskflow-dev',
+        }
+    }
+
+RATELIMIT_USE_CACHE = 'default'
+RATELIMIT_FAIL_OPEN = False   # block requests when cache is unavailable
+
+# Limits read by app/utils/ratelimit.py
+RATE_LIMITS = {
+    'login':       '5/m',
+    'register':    '3/m',
+    'refresh':     '10/m',
+    'tasks_write': '30/m',
+    'tasks_read':  '60/m',
+    'analytics':   '20/m',
+}
+
+# ─── REST Framework ───────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -123,23 +173,23 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
 }
 
-# ─── JWT Configuration ─────────────────────────────────────────────────────────
+# ─── JWT ─────────────────────────────────────────────────────────────────────
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
-    'ROTATE_REFRESH_TOKENS': True,
+    'ROTATE_REFRESH_TOKENS':  True,
     'BLACKLIST_AFTER_ROTATION': True,
-    'UPDATE_LAST_LOGIN': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
+    'UPDATE_LAST_LOGIN':      True,
+    'ALGORITHM':              'HS256',
+    'SIGNING_KEY':            SECRET_KEY,
+    'AUTH_HEADER_TYPES':      ('Bearer',),
+    'AUTH_HEADER_NAME':       'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD':          'id',
+    'USER_ID_CLAIM':          'user_id',
     'TOKEN_OBTAIN_SERIALIZER': 'app.serializers.auth_serializers.CustomTokenObtainPairSerializer',
 }
 
-# ─── CORS ──────────────────────────────────────────────────────────────────────
+# ─── CORS ─────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
     default='http://localhost:5173,http://localhost:3000',
@@ -147,37 +197,22 @@ CORS_ALLOWED_ORIGINS = config(
 )
 CORS_ALLOW_CREDENTIALS = True
 
-# ─── DRF Spectacular (Swagger) ─────────────────────────────────────────────────
+# ─── DRF Spectacular ─────────────────────────────────────────────────────────
 SPECTACULAR_SETTINGS = {
     'TITLE': 'TaskFlow API',
     'DESCRIPTION': 'Task Management System with Authentication and Analytics',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,
-    'SWAGGER_UI_SETTINGS': {
-        'persistAuthorization': True,
-    },
+    'SWAGGER_UI_SETTINGS': {'persistAuthorization': True},
 }
 
-# ─── Rate Limiting (django-ratelimit) ─────────────────────────────────────────
-# Uses Django's cache backend as counter store.
-# In production swap to Redis: CACHES = { 'default': { 'BACKEND': 'django_redis...' } }
-CACHES = {
-    'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'taskflow-ratelimit',
-    }
-}
-
-RATELIMIT_USE_CACHE = 'default'   # which CACHES key to use
-RATELIMIT_FAIL_OPEN  = False       # if cache is unavailable, BLOCK the request (safe default)
-
-# Limits per endpoint group (read in app/utils/ratelimit.py)
-RATE_LIMITS = {
-    'login':    '5/m',    # 5 attempts  / minute  / IP   — brute-force protection
-    'register': '3/m',    # 3 signups   / minute  / IP
-    'refresh':  '10/m',   # 10 refreshes/ minute  / IP
-    'tasks_write': '30/m',# 30 mutations/ minute  / user — create, update, delete
-    'tasks_read':  '60/m',# 60 reads    / minute  / user
-    'analytics':   '20/m',# 20 hits     / minute  / user
-}
+# ─── Security (production hardening) ─────────────────────────────────────────
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER      = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT          = True
+    SESSION_COOKIE_SECURE        = True
+    CSRF_COOKIE_SECURE           = True
+    SECURE_BROWSER_XSS_FILTER    = True
+    SECURE_CONTENT_TYPE_NOSNIFF  = True
+    X_FRAME_OPTIONS              = 'DENY'
