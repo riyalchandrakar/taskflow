@@ -170,7 +170,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'app.core.pagination.StandardPagination',
     'PAGE_SIZE': 10,
-   # 'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'app.core.exceptions.custom_exception_handler',
 }
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
@@ -216,3 +216,42 @@ if not DEBUG:
     SECURE_BROWSER_XSS_FILTER    = True
     SECURE_CONTENT_TYPE_NOSNIFF  = True
     X_FRAME_OPTIONS              = 'DENY'
+
+# ─── Logging — show full tracebacks in Render logs ───────────────────────────
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {module} {process:d} {thread:d}\n{message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',      # logs full 500 traceback
+            'propagate': False,
+        },
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',    # set to DEBUG locally to see SQL queries
+            'propagate': False,
+        },
+    },
+}
