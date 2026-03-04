@@ -1,0 +1,87 @@
+# ----------------------------
+
+# Python / Django
+
+# ----------------------------
+
+**pycache**/
+*.py[cod]
+*.sqlite3
+db.sqlite3
+*.log
+
+# Virtual environments
+
+venv/
+env/
+.venv/
+
+# Django stuff
+
+*.pyc
+media/
+staticfiles/
+
+# Environment variables
+
+.env
+.env.*
+
+# ----------------------------
+
+# Node / React / Vite
+
+# ----------------------------
+
+node_modules/
+dist/
+build/
+.cache/
+.vite/
+
+# Logs
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ----------------------------
+
+# OS files
+
+# ----------------------------
+
+.DS_Store
+Thumbs.db
+
+# ----------------------------
+
+# IDE / Editor
+
+# ----------------------------
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ----------------------------
+
+# Testing / coverage
+
+# ----------------------------
+
+coverage/
+htmlcov/
+.pytest_cache/
+
+# ----------------------------
+
+# Misc
+
+# ----------------------------
+
+*.tgz
+*.zip
+*.tar.gz

@@ -1,0 +1,190 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Theme variables ──────────────────────────────────────────────────────── */
+:root {
+  /* Light theme */
+  --bg-base: #f1f5f9;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f8fafc;
+  --bg-border: #e2e8f0;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+
+  color-scheme: light;
+}
+
+.dark {
+  /* Dark theme */
+  --bg-base: #080810;
+  --bg-surface: #0f0f1a;
+  --bg-elevated: #161625;
+  --bg-border: #1e1e32;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #475569;
+
+  color-scheme: dark;
+}
+
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-bg-base text-text-primary font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition:
+      background-color 0.3s ease,
+      color 0.3s ease;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-bg-base;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-bg-border rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-text-muted;
+  }
+}
+
+/* ─── Components ───────────────────────────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: rgba(var(--glass-bg, 15 15 26) / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--bg-border);
+  }
+
+  .card {
+    @apply bg-bg-surface border border-bg-border rounded-2xl transition-colors duration-300;
+  }
+  .card-elevated {
+    @apply bg-bg-elevated border border-bg-border rounded-2xl transition-colors duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-primary-500 hover:bg-primary-600 text-white font-medium px-4 py-2 rounded-xl
+           transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-secondary {
+    @apply bg-bg-elevated hover:bg-bg-border text-text-primary font-medium px-4 py-2 rounded-xl
+           border border-bg-border transition-all duration-200 active:scale-[0.98];
+  }
+  .btn-ghost {
+    @apply hover:bg-bg-elevated text-text-secondary hover:text-text-primary font-medium px-3 py-2 rounded-xl
+           transition-all duration-200;
+  }
+
+  .input {
+    @apply w-full bg-bg-elevated border border-bg-border rounded-xl px-4 py-3
+           text-text-primary placeholder:text-text-muted
+           focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500/30
+           transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium;
+  }
+  .badge-low {
+    @apply badge bg-accent-500/10 text-accent-400 border border-accent-500/20;
+  }
+  .badge-medium {
+    @apply badge bg-amber-500/10 text-amber-400 border border-amber-500/20;
+  }
+  .badge-high {
+    @apply badge bg-rose-500/10 text-rose-400 border border-rose-500/20;
+  }
+  .badge-pending {
+    @apply badge bg-primary-500/10 text-primary-400 border border-primary-500/20;
+  }
+  .badge-completed {
+    @apply badge bg-accent-500/10 text-accent-400 border border-accent-500/20;
+  }
+  .badge-archived {
+    @apply badge bg-gray-500/10 text-gray-400 border border-gray-500/20;
+  }
+}
+
+/* ─── Gradient mesh (adapts per theme) ────────────────────────────────────── */
+.mesh-bg {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 20% 10%,
+      rgba(99, 102, 241, 0.08) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 80% 80%,
+      rgba(34, 211, 238, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 60% 30%,
+      rgba(16, 185, 129, 0.04) 0%,
+      transparent 40%
+    );
+}
+
+/* Slightly stronger mesh in light mode for visibility */
+:root .mesh-bg {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 20% 10%,
+      rgba(99, 102, 241, 0.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 80% 80%,
+      rgba(34, 211, 238, 0.04) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse 40% 30% at 60% 30%,
+      rgba(16, 185, 129, 0.03) 0%,
+      transparent 40%
+    );
+}
+
+/* ─── Theme toggle button ──────────────────────────────────────────────────── */
+.theme-toggle {
+  @apply relative w-12 h-6 rounded-full transition-all duration-300 cursor-pointer;
+  background: var(--bg-border);
+}
+.theme-toggle::after {
+  content: "";
+  @apply absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform duration-300 shadow-sm;
+}
+.dark .theme-toggle {
+  @apply bg-primary-500;
+}
+.dark .theme-toggle::after {
+  transform: translateX(1.5rem);
+}
+
+@keyframes dashOffset {
+  from {
+    stroke-dashoffset: 440;
+  }
+}
+.score-ring {
+  animation: dashOffset 1.5s ease-out forwards;
+}
