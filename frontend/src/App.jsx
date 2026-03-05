@@ -6,6 +6,8 @@ import Signup from './pages/Signup'
 import Dashboard from './pages/Dashboard'
 import Tasks from './pages/Tasks'
 import Analytics from './pages/Analytics'
+import Feedback from './pages/Feedback'
+import Admin from './pages/Admin'
 import AppLayout from './components/layout/AppLayout'
 
 function ProtectedRoute({ children }) {
@@ -16,6 +18,14 @@ function ProtectedRoute({ children }) {
     </div>
   )
   return isAuthenticated ? children : <Navigate to="/login" replace />
+}
+
+function AdminRoute({ children }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (!user) return <Navigate to="/login" replace />
+  if (!user.is_staff) return <Navigate to="/dashboard" replace />
+  return children
 }
 
 function PublicRoute({ children }) {
@@ -34,6 +44,8 @@ function AppRoutes() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tasks"     element={<Tasks />} />
         <Route path="/analytics" element={<Analytics />} />
+        <Route path="/feedback"  element={<Feedback />} />
+        <Route path="/admin"     element={<AdminRoute><Admin /></AdminRoute>} />
       </Route>
     </Routes>
   )
