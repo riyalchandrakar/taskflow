@@ -179,3 +179,24 @@ def create_feedback(request):
         {'success': False, 'errors': serializer.errors},
         status=status.HTTP_400_BAD_REQUEST,
     )
+
+
+# ─── Feedback List ─────────────────────────────────────────────────────────────
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_feedback(request):
+    """GET /api/feedback/ — current user ka saara feedback"""
+    from app.models import Feedback
+    feedbacks = Feedback.objects.filter(user=request.user).select_related('task').order_by('-created_at')
+    paginator = StandardPagination()
+    page = paginator.paginate_queryset(feedbacks, request)
+    data = []
+    for f in page:
+        data.append({
+            'id': str(f.id),
+            'comment': f.comment,
+            'rating': f.rating,
+            'created_at': f.created_at.isoformat(),
+            'task': {'id': str(f.task.id), 'title': f.task.title} if f.task else None,
+        })
+    return paginator.get_paginated_response(data)

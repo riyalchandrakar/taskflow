@@ -14,6 +14,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         token = super().get_token(user)
         token['name'] = user.name
         token['email'] = user.email
+        token['is_staff'] = user.is_staff   # ← frontend needs this for admin routes
         return token
 
     def validate(self, attrs):
@@ -22,6 +23,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
             'id': str(self.user.id),
             'name': self.user.name,
             'email': self.user.email,
+            'is_staff': self.user.is_staff,
             'created_at': self.user.created_at.isoformat(),
         }
         return data
