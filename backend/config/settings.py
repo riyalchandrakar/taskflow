@@ -123,10 +123,8 @@ if REDIS_URL:
                 'CLIENT_CLASS': 'django_redis.client.DefaultClient',
                 'SOCKET_CONNECT_TIMEOUT': 5,
                 'SOCKET_TIMEOUT': 5,
-                'CONNECTION_POOL_KWARGS': {
-                    'max_connections': 20,
-                    'ssl_cert_reqs': None,   # required for Upstash TLS
-                },
+                # ssl_cert_reqs removed — not supported in redis-py >= 5.x
+                # Upstash TLS is handled via rediss:// scheme in the URL
                 'IGNORE_EXCEPTIONS': True,   # degrade gracefully if Redis is down
             },
             'KEY_PREFIX': 'taskflow',
